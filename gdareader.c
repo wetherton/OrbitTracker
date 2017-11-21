@@ -24,5 +24,36 @@ float ** loadgda(const char q[], int slice, int nx, int nz,const char datadir[])
   for(int nslice = 0; nsclice<slice; slice++){
     fread(outdata, sizeof(float), nx*nz, fp);
   }
-  return outdata;
+  // Decimation process begins here
+
+  float ** outdata1;
+  outdata = (float **)malloc(sizeof(float *)*nz);
+  outdata[0] = (float *)malloc(sizeof(float)*nx*nz/2);
+  for(int i = 0; i< nz; i++){
+    outdata[i] = (*outdata + nx*i/2);
+  }
+
+  for(int i = 0; i < nz; i++){
+    for(int j = 0; j< nx/2; j++){
+      outdata1[i][j] = (outdata[i][2*j] + outdata[i][2*j+1])/2;
+    }
+  }
+
+  free(outdata);
+  
+  float ** outdata2;
+  outdata = (float **)malloc(sizeof(float *)*nz/2);
+  outdata[0] = (float *)malloc(sizeof(float)*nx*nz/4);
+  for(int i = 0; i< nz/2; i++){
+    outdata[i] = (*outdata + nx*i/2);
+  }
+
+  for(int i = 0; i < nz/2; i++){
+    for(int j = 0; j< nx/2; j++){
+      outdata2[i][j] = (outdata1[2*i][j] + outdata1[2*i+1][j])/2;
+    }
+  }
+
+  free(outdata1);
+  return outdata2;
 }
