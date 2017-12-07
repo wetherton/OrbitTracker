@@ -44,6 +44,6 @@ int jacobian (double t, const double y[], double *dfdy, double dfdt[], void *par
 }
 
 int solveorbit(posvel IC){
-  interpfields();
-  gsl_odeiv2_system sys = {dxdt, jacobian, DIM, (void *) fields}
+  field masterfield[NX][NZ] = readfields(NX,NZ);
+  gsl_odeiv2_system sys = {dxdt, jacobian, DIM, (void *) masterfield}
 }

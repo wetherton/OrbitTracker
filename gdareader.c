@@ -57,3 +57,7 @@ float ** loadgda(const char q[], int slice, int nx, int nz,const char datadir[])
   free(outdata1);
   return outdata2;
 }
+
+void loadfields(NX,NZ){
+  
+}
