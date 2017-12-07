@@ -2,24 +2,16 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gslmatrix.h>
 #include <gsl/gsl_odeiv2.h>
+#include "solveorbit.h"
 
 #define USEJAC 0;
 #define DIM 6;
 #define TILEX 20;
 #define TILEZ 20;
 
-typedef struct{
-  double Ex, Ey, Ez, Bx, By, Bz;
-} field;
-
-
-typedef struct{
-  double x, y, z, vx, vy, vz;
-}posvel;
-
 int dxdt(double t, const double y[], double dydt[], void *params){
-  field masterfield[NX][NZ] = (field *) params;
-  field fields = interpfields(y[0],y[3],tilefield);
+  fieldgrid masterfield = (masterfield *) params;
+  field fields = interpfields(y[0],y[3],masterfield);
   (void) (t);
   dydt[0] = y[3];
   dydt[1] = y[4];
@@ -44,6 +36,6 @@ int jacobian (double t, const double y[], double *dfdy, double dfdt[], void *par
 }
 
 int solveorbit(posvel IC){
-  field masterfield[NX][NZ] = readfields(NX,NZ);
+  fieldgrid masterfield = readfields(NX,NZ);
   gsl_odeiv2_system sys = {dxdt, jacobian, DIM, (void *) masterfield}
 }

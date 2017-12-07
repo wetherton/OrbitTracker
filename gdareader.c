@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "solveorbit.h"
 
 char* concat(const char *s1, const char *s2){
   char *result = malloc(strlen(s1)+strlen(s2)+1);
@@ -58,6 +59,33 @@ float ** loadgda(const char q[], int slice, int nx, int nz,const char datadir[])
   return outdata2;
 }
 
-void loadfields(NX,NZ){
-  
+void loadfields(fieldgrid* masterfield,int NX,int NZ,int slice, const char datadir[]){
+  masterfield.Ex = loadgda("ex",slice, NX, NZ, datadir);
+  masterfield.Ey = loadgda("ey",slice, NX, NZ, datadir);
+  masterfield.Ez = loadgda("ez",slice, NX, NZ, datadir);
+  masterfield.Bx = loadgda("bx",slice, NX, NZ, datadir);
+  masterfield.By = loadgda("by",slice, NX, NZ, datadir);
+  masterfield.Bz = loadgda("bz",slice, NX, NZ, datadir);
+  masterfield.x  = loadx(LX,NX);
+  masterfield.z  = loadz(LZ,NZ);
 }
+fieldgrid masterfield;
+
+void masterfieldmalloc(fieldgrid *masterfield,nx,nz){
+  masterfield = (fieldgrid *)malloc(sizeof(float **)*6+sizeof(float*)*2);
+  masterfield.Ex = (float **)malloc(sizeof(float*)*nz/2);
+  masterfield.Ex[0] = (float *)malloc(sizeof(float)*nx*nz/4);
+  masterfield.Ey = (float **)malloc(sizeof(float*)*nz/2);
+  masterfield.Ey[0] = (float *)malloc(sizeof(float)*nx*nz/4);
+  masterfield.Ez = (float **)malloc(sizeof(float*)*nz/2);
+  masterfield.Ez[0] = (float *)malloc(sizeof(float)*nx*nz/4);
+  masterfield.Bx = (float **)malloc(sizeof(float*)*nz/2);
+  masterfield.Bx[0] = (float *)malloc(sizeof(float)*nx*nz/4);
+  masterfield.By = (float **)malloc(sizeof(float*)*nz/2);
+  masterfield.By[0] = (float *)malloc(sizeof(float)*nx*nz/4);
+  masterfield.Bz = (float **)malloc(sizeof(float*)*nz/2);
+  masterfield.Bz[0] = (float *)malloc(sizeof(float)*nx*nz/4);
+  masterfield.x = (float *)malloc(sizeof(float)*nx/2);
+  masterfield.z = (float *)malloc(sizeof(float)*nz/2);
+}
+
