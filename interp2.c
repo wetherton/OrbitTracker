@@ -1,10 +1,10 @@
-fields interpfield(pos ** xgrid, fields** field, pos xinterp){
+fields interpfield(fieldgrid field, pos xinterp){
   fields outfield;
   outfield.x = xinterp.x;
   outfield.z = xinterp.z;
   int xhighindex, xlowindex, zhighindex,zlowindex;
   for(int i = 0; i< NX; i++){
-    if (xinterp.x>xgrid.z[i][0])
+    if (xinterp.x>field.x[i])
       {
 	xhighindex = i;
 	if(i>0) xlowindex = i-1;
@@ -17,7 +17,7 @@ fields interpfield(pos ** xgrid, fields** field, pos xinterp){
   }
   
   for(int i = 0; i< NZ; i++){
-    if (xinterp.z<xgrid.z[0][i])
+    if (xinterp.z<field.z[i])
       {
         zhighindex = i;
         if(i>0) zlowindex = i-1;
@@ -29,17 +29,17 @@ fields interpfield(pos ** xgrid, fields** field, pos xinterp){
     }
   }
   double wll, whl, wlh, whh;
-  double dx = xgrid.x[1][0]-xgrid.x[0][0];
-  double dz = xgrid.z[0][0]-xgrid.z[0][1];
-  whh = (xinterp.x - xgrid.x[xlowindex][0])/dx*(xgrid.z[0][zlowindex]-xinterp.z)/dz;
-  whl = (xinterp.x - xgrid.x[xlowindex][0])/dx*(-xgrid.z[0][zhighindex]+xinterp.z)/dz;
-  wlh = (-xinterp.x + xgrid.x[xhighindex][0])/dx*(xgrid.z[0][zlowindex]-xinterp.z)/dz;
-  wll = (xinterp.x - xgrid.x[xhighindex][0])/dx*(xgrid.z[0][zhighindex]-xinterp.z)/dz;
+  double dx = field.x[1]-field.x[0];
+  double dz = field.z[0]-field.z[1];
+  whh = (xinterp.x - field.x[xlowindex])/dx*(field.z[zlowindex]-xinterp.z)/dz;
+  whl = (xinterp.x - field.x[xlowindex])/dx*(-field.z[zhighindex]+xinterp.z)/dz;
+  wlh = (-xinterp.x + field.x[xhighindex])/dx*(field.z[zlowindex]-xinterp.z)/dz;
+  wll = (xinterp.x - field.x[xhighindex])/dx*(field.z[zhighindex]-xinterp.z)/dz;
 
   if((zhighindex == 0)||(zlowindex == (NZ-1))){
     whh = 0;
-    wlh = (xgrid.z[xlowindex][0]-xinterp.z)/dz;
-    wll = (-xgrid.z[xhighindex][0]+xinterp.z)/dz;
+    wlh = (field.z[xlowindex]-xinterp.z)/dz;
+    wll = (-field.z[xhighindex]+xinterp.z)/dz;
     whl = 0;
   }
 
@@ -50,8 +50,8 @@ fields interpfield(pos ** xgrid, fields** field, pos xinterp){
     else{
       whh = 0;
       wlh = 0;
-      wll = (xgrid.x[xhighindex][0]-xinterp.x)/dx;
-      whl = (xinterp.x-xgrid.x[lowindex][0])/dx;
+      wll = (field.x[xhighindex]-xinterp.x)/dx;
+      whl = (xinterp.x-field.x[lowindex])/dx;
     }
   }
 

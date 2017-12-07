@@ -12,4 +12,8 @@ typedef struct{
   double x, y, z, vx, vy, vz;
 }posvel;
 
+typedef struct{
+  double x, z;
+}pos;
+
 masterfieldmalloc(fieldgrid *, int, int);
