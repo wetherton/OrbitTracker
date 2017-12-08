@@ -1,0 +1,45 @@
+TOP_DIR = /home/bwetherton/art
+
+SF_RECIPE = mgc
+SF_FEEDBACK = mgc2
+SF_ALGORITHM = mgc
+LB_METHOD =
+
+PLATFORM = nanna
+
+.phony: compile run clean
+
+compile: disk
+
+run: dumps disk
+	mpirun -np 1 ./disk disk.cfg
+
+dumps:
+	@mkdir dumps
+
+DISK_SRC = ./src/
+
+PLUGIN = $(DISK_SRC) /extra 
+#PLUGIN = analysis.c
+
+include $(TOP_DIR)/Make.config
+
+VIEWOBJ = .obj/extra/viewdump.o .obj/extra/ifrit.o .obj/extra/utils.o #.obj/extra/output_column.o  
+
+.obj/analysis.o: $(DISK_SRC)disk.h $(DISK_SRC)analysis.c $(DISK_SRC)analysis.h
+	$(CC) $(CFLAGS) -I. -I$(SRC_DIR) -I$(SRC_DIR)/base -I$(SRC_DIR)/extra -I$(SRC_DIR)/core $(INCLUDES) -c $(DISK_SRC)analysis.c -o .obj/analysis.o
+
+.obj/accel.o: $(DISK_SRC)accel.c $(DISK_SRC)accel.h
+	$(CC) $(CFLAGS) -I. -I$(SRC_DIR) -I$(SRC_DIR)/base -I$(SRC_DIR)/extra -I$(SRC_DIR)/core $(INCLUDES) -c $(DISK_SRC)accel.c -o .obj/accel.o
+
+.obj/tracers.o: $(DISK_SRC)tracers.c $(DISK_SRC)tracers.h
+	$(CC) $(CFLAGS) -I. -I$(SRC_DIR) -I$(SRC_DIR)/base -I$(SRC_DIR)/extra -I$(SRC_DIR)/core $(INCLUDES) -c $(DISK_SRC)tracers.c -o .obj/tracers.o
+
+.obj/plugins.o: $(DISK_SRC)disk.h $(DISK_SRC)analysis.h $(DISK_SRC)accel.h $(DISK_SRC)plugins.c
+	$(CC) $(CFLAGS) -I. -I$(SRC_DIR) -I$(SRC_DIR)/base -I$(SRC_DIR)/extra -I$(SRC_DIR)/core $(INCLUDES) -c $(DISK_SRC)plugins.c -o .obj/plugins.o
+
+disk:  .obj/.phony $(SIM_OBJS) defs.h $(DISK_SRC)disk.h $(DISK_SRC)disk.c $(VIEWOBJ) .obj/analysis.o .obj/accel.o .obj/tracers.o .obj/plugins.o
+	$(CC) $(CFLAGS) -I. -I$(SRC_DIR) -I$(SRC_DIR)/base -I$(SRC_DIR)/core $(INCLUDES) $(SIM_OBJS) .obj/analysis.o .obj/accel.o .obj/tracers.o .obj/plugins.o $(DISK_SRC)disk.c -o disk  $(LIBS) $(EXTRALIBS) 
+
+CLEAN += disk *.o *.log
+
