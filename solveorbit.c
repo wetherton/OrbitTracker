@@ -1,13 +1,37 @@
 #include <stdio.h>
+#include <omp.h>
+#include <mpi.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gslmatrix.h>
 #include <gsl/gsl_odeiv2.h>
 #include "solveorbit.h"
+#include "gdareader.h"
 
 #define USEJAC 0;
 #define DIM 6;
 #define TILEX 20;
 #define TILEZ 20;
+
+char jobname[], outdir[],gdadir[];
+int Nvx, Nvy, Nvz;
+double vxmax, vymax, vzmax;
+int Npoints;
+double *x0, *z0;
+
+int main(int argc,char *argv[]){
+  MPI_Init(&argc, &argv);
+  int myid, numprocs;
+  MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
+  MPI_Comm_rank(MPI_COMM_WORLD,&myid);
+  initialize();
+  double *vx, *vy, *vz;
+
+#pragma omp_parallel_for()
+  for(){
+    
+  }
+  MPI_Finalize();
+}
 
 int dxdt(double t, const double y[], double dydt[], void *params){
   fieldgrid masterfield = (masterfield *) params;
@@ -61,4 +85,25 @@ int solveorbit(posvel IC){
     }
   }
   gsl_odeiv2_driver_free(d);
+}
+
+int initialize(){
+  FILE * fp = fopen("orbit.cfg","r");
+  fscanf(fp,"job-name\t%s",jobname);
+  fscanf(fp,"directory:outputs\t%s",outdir);
+  fscanf(fp,"directory:gdas\t%s",gdadir);
+  fscanf(fp, "vxmax\t%lf",vxmax);
+  fscanf(fp, "vymax\t%lf",vymax);
+  fscanf(fp, "vzmax\t%lf",vzmax);
+  fscanf(fp, "Nvx\t%d",Nvx);
+  fscanf(fp, "Nvy\t%d",Nvy);
+  fscanf(fp, "Nvz\t%d",Nvz);
+  fscanf(fp, "Npoints\t%d",Npoints);
+  x0 = (double *)malloc(Npoints*sizeof(double));
+  z0 = (double *)malloc(Npoints*sizeof(double));
+  fscanf(fp, "x0\t%lf",x0[0]);
+  for(int i = 1; i<Npoints; i++) fscanf("%lf",x0[i]);
+  fscanf(fp, "z0\t%lf",z0[0]);
+  for(int i = 1; i<Npoints; i++) fscanf("%lf",z0[i]);
+  
 }
