@@ -16,4 +16,10 @@ typedef struct{
   double x, z;
 }pos;
 
-masterfieldmalloc(fieldgrid *, int, int);
+int dxdt(double t, const double y[],double dydt[],void * params);
+int dxdtB(double t, const double y[],double dydt[],void * params);
+int jacobian(double t, const double y[],double *, double dfdt[], void * params);
+int solveorbit(posvel IC);
+int solveorbit(posvel IC);
+int initialize();
+int outcheck(double, double);

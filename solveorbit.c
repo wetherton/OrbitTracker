@@ -6,6 +6,7 @@
 #include <gsl/gsl_odeiv2.h>
 #include "solveorbit.h"
 #include "gdareader.h"
+#include "interp2.h"
 
 #define USEJAC 0;
 #define DIM 6;
@@ -200,5 +201,11 @@ int initialize(){
   fscanf(fp, "Lx\t%lf",Lx);
   fscanf(fp, "Lz\t%lf",Lz);
   fscanf(fp, "nx\t%d",nx);
-  fscanf(fp, "nz\t%d",nz); 
+  fscanf(fp, "nz\t%d",nz);
+  return 0;
+}
+
+int outcheck(double x,double z){
+  if((x>maxx)||(x<minx)||(z>maxz)||(z<minz)) return 1;
+  return 0;
 }
