@@ -82,7 +82,8 @@ int dxdt(double t, const double y[], double dydt[], void *params){
   fieldgrid masterfield = *(fieldgrid *) params;
   pos xyz;
   xyz.x = y[0]; xyz.z = y[2];
-  field fields = interpfield(masterfield,xyz);
+  field fields;
+  interpfield(fields,masterfield,xyz,nx,nz);
   (void) (t);
   double gamma = sqrt(1+y[3]*y[3]+y[4]*y[4]+y[5]*y[5]);
   double vx = y[3]/gamma;
@@ -101,7 +102,8 @@ int dxdtB(double t, const double y[], double dydt[], void *params){
   fieldgrid masterfield = *(fieldgrid *) params;
   pos xyz;
   xyz.x = y[0]; xyz.z = y[2];
-  field fields = interpfield(masterfield,xyz);
+  field fields;
+  interpfield(fields,masterfield,xyz,nx,nz);
   double gamma = sqrt(1+y[3]*y[3]+y[4]*y[4]+y[5]*y[5]);
   double vx = y[3]/gamma;
   double vy = y[4]/gamma;

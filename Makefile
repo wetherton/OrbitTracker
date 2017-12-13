@@ -20,7 +20,7 @@ EXEC := orbitsolve
 all : Makefile $(EXEC)
 
 orbitsolve: 
-	mpicc -std=c99 -o solveorbit.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas
+	mpicc -std=c99 -o orbitsolve solveorbit.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas
 
 .PHONY: clean
 clean:
