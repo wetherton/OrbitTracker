@@ -1,10 +1,7 @@
 #include "interp2.h"
 #include "solveorbit.h"
 
-field interpfield(fieldgrid field, pos xinterp){
-  field outfield;
-  outfield.x = xinterp.x;
-  outfield.z = xinterp.z;
+void interpfield(field outfield, fieldgrid field, pos xinterp, int NX, int NZ){
   int xhighindex, xlowindex, zhighindex,zlowindex;
   for(int i = 0; i< NX; i++){
     if (xinterp.x>field.x[i])
@@ -48,13 +45,13 @@ field interpfield(fieldgrid field, pos xinterp){
 
   if((xhighindex == 0)||(xlowindex == (NX-1))){
     if((zhighindex == 0)||(zlowindex == (NZ-1))){
-      whh = 0; whl = 0; wlh = o; wll = 1;
+      whh = 0; whl = 0; wlh = 0; wll = 1;
     }
     else{
       whh = 0;
       wlh = 0;
       wll = (field.x[xhighindex]-xinterp.x)/dx;
-      whl = (xinterp.x-field.x[lowindex])/dx;
+      whl = (xinterp.x-field.x[xlowindex])/dx;
     }
   }
 
@@ -65,5 +62,4 @@ field interpfield(fieldgrid field, pos xinterp){
   outfield.Bx = wll*field.Bx[xlowindex][zlowindex] +wlh*field.Bx[xlowindex][zhighindex] + whl*field.Bx[xhighindex][zlowindex] + whh*field.Bx[xhighindex][zhighindex];
   outfield.By = wll*field.By[xlowindex][zlowindex] +wlh*field.By[xlowindex][zhighindex] + whl*field.By[xhighindex][zlowindex] + whh*field.By[xhighindex][zhighindex];
   outfield.Bz = wll*field.Bz[xlowindex][zlowindex] +wlh*field.Bz[xlowindex][zhighindex] + whl*field.Bz[xhighindex][zlowindex] + whh*field.Bz[xhighindex][zhighindex];
-  return outfield;
 }
