@@ -1,5 +1,8 @@
-fields interpfield(fieldgrid field, pos xinterp){
-  fields outfield;
+#include "interp2.h"
+#include "solveorbit.h"
+
+field interpfield(fieldgrid field, pos xinterp){
+  field outfield;
   outfield.x = xinterp.x;
   outfield.z = xinterp.z;
   int xhighindex, xlowindex, zhighindex,zlowindex;

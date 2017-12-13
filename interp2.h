@@ -1,2 +1,5 @@
+#ifndef INTERP2_H
+#define INTERP2_H
 #include "solveorbit.h"
-fields interpfield(fieldgrid, pos);
+field interpfield(fieldgrid A, pos B);
+#endif

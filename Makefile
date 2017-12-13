@@ -14,8 +14,8 @@ EXEC := orbitsolve
 
 all : Makefile $(EXEC)
 
-orbitsolve: solveorbit.c gdareader.c interp2.c
-	mpicc $(CXXSTD) $(WFLAGS) $(OPT) -fopenmp -o $@ $<
+orbitsolve: solveorbit.c gdareader.c interp2.c solveorbit.h gdareader.h interp2.h
+	mpicc $(CCSTD) $(WFLAGS) $(OPT) -lgsl -lgslcblas -lm -fopenmp -o $@ $<
 
 .PHONY: clean
 clean:
