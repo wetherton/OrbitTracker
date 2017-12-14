@@ -11,7 +11,7 @@ char* concat(const char *s1, const char *s2){
   return result;
 }
 
-void loadgda(double ** outdata2, const char q[], int slice, int nx, int nz,const char datadir[]){
+void loadgda(double ** outdata2, const char q[], int slice, int nx, int nz, const char datadir[]){
   char * im1 = concat(datadir,"/");
   char * im2 = concat(im1, q);
   char * fname = concat(im2,".gda");
@@ -21,11 +21,18 @@ void loadgda(double ** outdata2, const char q[], int slice, int nx, int nz,const
   for(int i = 0; i< nz; i++){
     outdata[i] = (*outdata + nx*i);
   }
+  float *buffer = (float *) malloc(sizeof(float)*nx*nz);
   FILE *fp = fopen(fname, "rb");
-  free(im1); free(im2); free(fname);
   for(int nslice = 0; nslice<slice; slice++){
-    fread(outdata, sizeof(float), nx*nz, fp);
+    fread((void *) buffer, sizeof(float), nx*nz, fp);
   }
+
+  for(int i = 0; i<nz; i++){
+    for(int j = 0; j<nx; j++){
+      outdata[i][j] = buffer[j+nx*i];
+    }
+  }
+  free(buffer);
   // Decimation process begins here
 
   float ** outdata1;

@@ -20,7 +20,7 @@ EXEC := orbitsolve
 all : Makefile $(EXEC)
 
 debug:
-	mpicc -g -std=c99 -o orbitsolve solveorbit.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas
+	gcc -g -std=c99 -o orbitsolve solveorbit.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas
 
 orbitsolve: 
 	mpicc -std=c99 -o orbitsolve -O3 solveorbit.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas

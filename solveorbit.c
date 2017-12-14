@@ -16,7 +16,7 @@
 #define OMPNUM 8
 #define MAGIC 4
 
-char jobname[128], outdir[256],gdadir[256];
+const char jobname[128], outdir[256],gdadir[256];
 int Nvx, Nvy, Nvz;
 double vxmax, vymax, vzmax, Lx, Lz, minx, minz, maxx, maxz;
 int Npoints, nts, nx, nz, slice;
@@ -24,14 +24,15 @@ double tend;
 double *x0, *z0;
 
 int main(int argc,char *argv[]){
-  MPI_Init(&argc, &argv);
+  //MPI_Init(&argc, &argv);
   int rank, numprocs;
-  MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  rank = 0; numprocs = 1;
+  //MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
+  //MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   initialize();
   fieldgrid masterfield;
   masterfieldmalloc(masterfield,nx,nz);
-  loadfields(masterfield,nx,nz,Lx,Lz,slice, gdadir);
+  loadfields(masterfield,nx,nz,Lx,Lz,slice,gdadir);
   double *vx, *vy, *vz;
   int nICs = Nvx*Nvy*Nvz;
   int size = nICs*sizeof(double);
@@ -74,7 +75,7 @@ int main(int argc,char *argv[]){
       }
     }
   }
-  MPI_Finalize();
+  //MPI_Finalize();
   return 0;
 }
 
@@ -176,7 +177,7 @@ int solveorbitB(posvel IC, fieldgrid masterfield){
       break;
     }
 
-    fprintf(fp, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],ti);
+    fprintf(fp, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-ti);
 
     if(outcheck(y[0],y[2])){
       break;
@@ -188,34 +189,45 @@ int solveorbitB(posvel IC, fieldgrid masterfield){
 
 
 int initialize(){
+  char buff[256];
   FILE * fp = fopen("orbit.cfg","r");
-  fscanf(fp,"job-name\t%s",jobname);
-  fscanf(fp,"directory:outputs\t%s",outdir);
-  fscanf(fp,"directory:gdas\t%s",gdadir);
-  fscanf(fp, "vxmax\t%lf",&vxmax);
-  fscanf(fp, "vymax\t%lf",&vymax);
-  fscanf(fp, "vzmax\t%lf",&vzmax);
-  fscanf(fp, "Nvx\t%d",&Nvx);
-  fscanf(fp, "Nvy\t%d",&Nvy);
-  fscanf(fp, "Nvz\t%d",&Nvz);
-  fscanf(fp, "Npoints\t%d",&Npoints);
+  fscanf(fp,"job-name %s\n",jobname);
+  fscanf(fp,"directory:outputs %s\n",outdir);
+  fscanf(fp,"directory:gdas %s\n",gdadir);
+  fscanf(fp, "vxmax %lf\n",&vxmax);
+  fscanf(fp, "vymax %lf\n",&vymax);
+  fscanf(fp, "vzmax %lf\n",&vzmax);
+  fscanf(fp, "Nvx %d\n",&Nvx);
+  fscanf(fp, "Nvy %d\n",&Nvy);
+  fscanf(fp, "Nvz %d\n",&Nvz);
+  fscanf(fp, "Npoints %d\n",&Npoints);
   x0 = (double *)malloc(Npoints*sizeof(double));
   z0 = (double *)malloc(Npoints*sizeof(double));
-  fscanf(fp, "x0\t%lf",&x0[0]);
-  for(int i = 1; i<Npoints; i++) fscanf(fp, "%lf",&x0[i]);
-  fscanf(fp, "z0\t%lf",&z0[0]);
-  for(int i = 1; i<Npoints; i++) fscanf(fp, "%lf",&z0[i]);
-  fscanf(fp, "tend\t%lf",&tend);
-  fscanf(fp, "nts\t%d",&nts);
-  fscanf(fp, "minx\t%lf",&minx);
-  fscanf(fp, "maxx\t%lf",&maxx);
-  fscanf(fp, "minz\t%lf",&minz);
-  fscanf(fp, "maxz\t%lf",&maxz);
-  fscanf(fp, "Lx\t%lf",&Lx);
-  fscanf(fp, "Lz\t%lf",&Lz);
-  fscanf(fp, "nx\t%d",&nx);
-  fscanf(fp, "nz\t%d",&nz);
-  fscanf(fp, "slice\t%d",&slice);
+  if(Npoints == 1){
+    fscanf(fp, "x0 %lf\n",&x0[0]);
+    fscanf(fp, "z0 %lf\n",&z0[0]);
+  }
+  else{
+    fscanf(fp, "x0 %lf",&x0[0]);
+    for(int i = 1; i<(Npoints-1); i++) fscanf(fp, " %lf",&x0[i]);
+    fscanf(fp,"%lf\n",&x0[Npoints-1]);
+    
+    fscanf(fp, "z0 %lf",&z0[0]);
+    for(int i = 1; i<(Npoints-1); i++) fscanf(fp, " %lf",&z0[i]);
+    fscanf(fp,"%lf\n",&z0[Npoints-1]);
+  }
+  fscanf(fp, "tend %lf\n",&tend);
+  fscanf(fp, "nts %d\n",&nts);
+  fscanf(fp, "minx %lf\n",&minx);
+  fscanf(fp, "maxx %lf\n",&maxx);
+  fscanf(fp, "minz %lf\n",&minz);
+  fscanf(fp, "maxz %lf\n",&maxz);
+  fscanf(fp, "Lx %lf\n",&Lx);
+  fscanf(fp, "Lz %lf\n",&Lz);
+  fscanf(fp, "nx %d\n",&nx);
+  fscanf(fp, "nz %d\n",&nz);
+  fscanf(fp, "slice %d",&slice);
+  fclose(fp);
   return 0;
 }
 
