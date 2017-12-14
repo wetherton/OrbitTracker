@@ -215,6 +215,7 @@ int initialize(){
   fscanf(fp, "Lz\t%lf",&Lz);
   fscanf(fp, "nx\t%d",&nx);
   fscanf(fp, "nz\t%d",&nz);
+  fscanf(fp, "slice\t%d",&slice);
   return 0;
 }
 
