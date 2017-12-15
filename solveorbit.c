@@ -19,7 +19,7 @@
 const char jobname[128], outdir[256],gdadir[256];
 int Nvx, Nvy, Nvz;
 double vxmax, vymax, vzmax, Lx, Lz, minx, minz, maxx, maxz;
-int Npoints, nts, nx, nz, slice;
+int Npoints, nts, nx, nz, slice, nthreads;
 double tend;
 double *x0, *z0;
 
@@ -30,6 +30,7 @@ int main(int argc,char *argv[]){
   //MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
   //MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   initialize();
+  omp_set_num_threads(nthreads);
   fieldgrid masterfield;
   masterfieldmalloc(masterfield,nx,nz);
   loadfields(masterfield,nx,nz,Lx,Lz,slice,gdadir);
@@ -135,8 +136,10 @@ int jacobian (double t, const double y[], double *dfdy, double dfdt[], void *par
 
 int solveorbit(posvel IC, fieldgrid masterfield){
   char filestring[256];
-  sprintf(filestring, "%sFx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.txt",jobname,IC.x,IC.z,IC.vx,IC.vy,IC.vz);
-  FILE *fp = fopen(filestring,"w");
+  sprintf(filestring, "%sFx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.txt\0",jobname,IC.x,IC.z,IC.vx*1000,IC.vy*1000,IC.vz*1000);
+  char *out1 = concat(outdir,"/");
+  char *out = concat(out1,filestring);
+  FILE *fp = fopen(out,"w");
   gsl_odeiv2_system sys = {dxdt, jacobian, DIM, (void *)&masterfield};
   gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd,1e-6, 1e-6, 0.0);
   double t = 0.0;
@@ -162,8 +165,10 @@ int solveorbit(posvel IC, fieldgrid masterfield){
 
 int solveorbitB(posvel IC, fieldgrid masterfield){
   char filestring[256];
-  sprintf(filestring, "%sBx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.txt",jobname,IC.x,IC.z,IC.vx,IC.vy,IC.vz);
-  FILE *fp = fopen(filestring,"w");
+  sprintf(filestring, "%sBx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.txt\0",jobname,IC.x,IC.z,1000*IC.vx,1000*IC.vy,1000*IC.vz);
+  char *out1 = concat(outdir,"/");
+  char *out = concat(out1,filestring);
+  FILE *fp = fopen(out,"w");
   gsl_odeiv2_system sys = {dxdtB, jacobian, DIM, (void *)&masterfield};
   gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd,1e-6, 1e-6, 0.0);
   double t = 0.0;
@@ -226,7 +231,8 @@ int initialize(){
   fscanf(fp, "Lz %lf\n",&Lz);
   fscanf(fp, "nx %d\n",&nx);
   fscanf(fp, "nz %d\n",&nz);
-  fscanf(fp, "slice %d",&slice);
+  fscanf(fp, "slice %d\n",&slice);
+  fscanf(fp,"omp:nthreads %d\n",&nthreads);
   fclose(fp);
   return 0;
 }

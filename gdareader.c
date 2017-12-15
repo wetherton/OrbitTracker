@@ -23,10 +23,11 @@ void loadgda(double ** outdata2, const char q[], int slice, int nx, int nz, cons
   }
   float *buffer = (float *) malloc(sizeof(float)*nx*nz);
   FILE *fp = fopen(fname, "rb");
-  for(int nslice = 0; nslice<slice; slice++){
-    fread((void *) buffer, sizeof(float), nx*nz, fp);
+  for(int nslice = 0; nslice<slice; nslice++){
+    fread(buffer, sizeof(float), nx*nz, fp);
   }
 
+  fclose(fp);
   for(int i = 0; i<nz; i++){
     for(int j = 0; j<nx; j++){
       outdata[i][j] = buffer[j+nx*i];
@@ -96,7 +97,6 @@ void masterfieldmalloc(fieldgrid masterfield,int nx,int nz){
 }
 
 void loadx(double *x,double Lx, int nx){
-  x = (double *) malloc (sizeof(double)*nx);
   double dx = Lx/(nx-1);
   for(int i = 0; i< nx; i++){
     x[i] = i*dx;
@@ -104,7 +104,6 @@ void loadx(double *x,double Lx, int nx){
 }
 
 void loadz(double *z, double Lz, int nz){
-  z = (double *) malloc (sizeof(double)*nz);
   double dz = Lz/(nz-1);
   for(int i = 0; i< nz; i++){
     z[i] = -Lz/2+i*dz;
