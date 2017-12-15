@@ -39,11 +39,11 @@ field interpfield(fieldgrid mfield, pos xinterp, int NX, int NZ, double Lx, doub
   }
 
 
-  outfield.Ex = wll*mfield.Ex[xlowindex][zlowindex] +wlh*mfield.Ex[xlowindex][zhighindex] + whl*mfield.Ex[xhighindex][zlowindex] + whh*mfield.Ex[xhighindex][zhighindex];
-  outfield.Ey = wll*mfield.Ey[xlowindex][zlowindex] +wlh*mfield.Ey[xlowindex][zhighindex] + whl*mfield.Ey[xhighindex][zlowindex] + whh*mfield.Ey[xhighindex][zhighindex];
-  outfield.Ez = wll*mfield.Ez[xlowindex][zlowindex] +wlh*mfield.Ez[xlowindex][zhighindex] + whl*mfield.Ez[xhighindex][zlowindex] + whh*mfield.Ez[xhighindex][zhighindex];
-  outfield.Bx = wll*mfield.Bx[xlowindex][zlowindex] +wlh*mfield.Bx[xlowindex][zhighindex] + whl*mfield.Bx[xhighindex][zlowindex] + whh*mfield.Bx[xhighindex][zhighindex];
-  outfield.By = wll*mfield.By[xlowindex][zlowindex] +wlh*mfield.By[xlowindex][zhighindex] + whl*mfield.By[xhighindex][zlowindex] + whh*mfield.By[xhighindex][zhighindex];
-  outfield.Bz = wll*mfield.Bz[xlowindex][zlowindex] +wlh*mfield.Bz[xlowindex][zhighindex] + whl*mfield.Bz[xhighindex][zlowindex] + whh*mfield.Bz[xhighindex][zhighindex];
+  outfield.Ex = wll*mfield.Ex[zlowindex][xlowindex] +wlh*mfield.Ex[zlowindex][xhighindex] + whl*mfield.Ex[zhighindex][xlowindex] + whh*mfield.Ex[zhighindex][xhighindex];
+  outfield.Ey = wll*mfield.Ey[zlowindex][xlowindex] +wlh*mfield.Ey[zlowindex][xhighindex] + whl*mfield.Ey[zhighindex][xlowindex] + whh*mfield.Ey[zhighindex][xhighindex];
+  outfield.Ez = wll*mfield.Ez[zlowindex][xlowindex] +wlh*mfield.Ez[zlowindex][xhighindex] + whl*mfield.Ez[zhighindex][xlowindex] + whh*mfield.Ez[zhighindex][xhighindex];
+  outfield.Bx = wll*mfield.Bx[zlowindex][xlowindex] +wlh*mfield.Bx[zlowindex][xhighindex] + whl*mfield.Bx[zhighindex][xlowindex] + whh*mfield.Bx[zhighindex][xhighindex];
+  outfield.By = wll*mfield.By[zlowindex][xlowindex] +wlh*mfield.By[zlowindex][xhighindex] + whl*mfield.By[zhighindex][xlowindex] + whh*mfield.By[zhighindex][xhighindex];
+  outfield.Bz = wll*mfield.Bz[zlowindex][xlowindex] +wlh*mfield.Bz[zlowindex][xhighindex] + whl*mfield.Bz[zhighindex][xlowindex] + whh*mfield.Bz[zhighindex][xhighindex];
   return outfield;
 }
