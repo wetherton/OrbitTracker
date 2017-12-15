@@ -132,6 +132,8 @@ int jacobian (double t, const double y[], double *dfdy, double dfdt[], void *par
 
 int solveorbit(posvel IC, fieldgrid masterfield){
   char filestring[256];
+  char buffer[1024];
+  char *outstring;
   sprintf(filestring, "%sFx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.txt\0",jobname,IC.x,IC.z,IC.vx*1000,IC.vy*1000,IC.vz*1000);
   char *out1 = concat(outdir,"/");
   char *out = concat(out1,filestring);
@@ -149,18 +151,23 @@ int solveorbit(posvel IC, fieldgrid masterfield){
       break;
     }
 
-    fprintf(fp, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],y[3],y[4],y[5],ti);
-    
+    sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],y[3],y[4],y[5],ti);
+    concat(outstring,buffer);
     if(outcheck(y[0],y[2])){
       break;
     }
   }
   gsl_odeiv2_driver_free(d);
+  fprintf(fp,"%s",outstring);
+  free(outstring);
   return 0;
 }
 
 int solveorbitB(posvel IC, fieldgrid masterfield){
   char filestring[256];
+  char buffer[1024];
+  char *outstring;
+  
   sprintf(filestring, "%sBx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.txt\0",jobname,IC.x,IC.z,1000*IC.vx,1000*IC.vy,1000*IC.vz);
   char *out1 = concat(outdir,"/");
   char *out = concat(out1,filestring);
@@ -178,13 +185,15 @@ int solveorbitB(posvel IC, fieldgrid masterfield){
       break;
     }
 
-    fprintf(fp, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-ti);
-
+    sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-ti);
+    concat(outstring,buffer);
     if(outcheck(y[0],y[2])){
       break;
     }
   }
   gsl_odeiv2_driver_free(d);
+  fprintf(fp,"%s",outstring);
+  free(outstring);
   return 0;
 }
 
