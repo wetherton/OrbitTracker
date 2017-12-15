@@ -2,7 +2,7 @@
 WFLAGS	:= -Wall -Wextra
 
 # Optimization and architecture
-OPT		:= -O3
+OPT		:= -O2
 
 # Linker Options
 LDOPT   := $(OPT)

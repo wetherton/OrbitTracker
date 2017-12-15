@@ -26,10 +26,10 @@ double *x0, *z0;
 
 int main(int argc,char *argv[]){
   clock_t start = clock(), diff;
-  MPI_Init(&argc, &argv);
-  int rank, numprocs;
-  MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  //  MPI_Init(&argc, &argv);
+  int rank =0, numprocs=1;
+  //MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
+  //MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   initialize();
   omp_set_num_threads(nthreads);
   fieldgrid masterfield;
@@ -79,7 +79,7 @@ int main(int argc,char *argv[]){
   diff = clock() - start;
   int msec = diff * 1000/CLOCKS_PER_SEC;
   printf("Time: %d ms", msec);
-  MPI_Finalize();
+  //MPI_Finalize();
   return 0;
 }
 
