@@ -1,45 +1,28 @@
 #include "interp2.h"
 #include "solveorbit.h"
 
-void interpfield(field outfield, fieldgrid field, pos xinterp, int NX, int NZ){
+field interpfield(fieldgrid mfield, pos xinterp, int NX, int NZ, double Lx, double Lz){
+  field outfield;
   int xhighindex, xlowindex, zhighindex,zlowindex;
-  for(int i = 0; i< NX; i++){
-    if (xinterp.x>field.x[i])
-      {
-	xhighindex = i;
-	if(i>0) xlowindex = i-1;
-	break;
-      }
-    if(i==NX-1){
-      xhighindex = NX-1;
-      xlowindex = NX -1;
-    }
-  }
-  
-  for(int i = 0; i< NZ; i++){
-    if (xinterp.z<field.z[i])
-      {
-        zhighindex = i;
-        if(i>0) zlowindex = i-1;
-        break;
-      }
-    if(i==NZ-1){
-      zhighindex = NZ-1;
-      zlowindex = NZ -1;
-    }
-  }
+  double dx = Lx/(NX-1);
+  double dz = Lz/(NZ-1);
+  if(xinterp.x>0) xlowindex = (int) xinterp.x/dx;
+  if(xlowindex<(NX-1)) xhighindex = xlowindex+1;
+  else xhighindex = xlowindex;
+
+  if(xinterp.z>-Lz/2) zlowindex = (int) (xinterp.z+Lz/2)/dz;
+  if(zlowindex<(NZ-1)) zhighindex = zlowindex+1;
+  else zhighindex = zlowindex;
   double wll, whl, wlh, whh;
-  double dx = field.x[1]-field.x[0];
-  double dz = field.z[0]-field.z[1];
-  whh = (xinterp.x - field.x[xlowindex])/dx*(field.z[zlowindex]-xinterp.z)/dz;
-  whl = (xinterp.x - field.x[xlowindex])/dx*(-field.z[zhighindex]+xinterp.z)/dz;
-  wlh = (-xinterp.x + field.x[xhighindex])/dx*(field.z[zlowindex]-xinterp.z)/dz;
-  wll = (xinterp.x - field.x[xhighindex])/dx*(field.z[zhighindex]-xinterp.z)/dz;
+  whh = (xinterp.x - mfield.x[xlowindex])/dx*(mfield.z[zlowindex]-xinterp.z)/dz;
+  whl = (xinterp.x - mfield.x[xlowindex])/dx*(-mfield.z[zhighindex]+xinterp.z)/dz;
+  wlh = (-xinterp.x + mfield.x[xhighindex])/dx*(mfield.z[zlowindex]-xinterp.z)/dz;
+  wll = (xinterp.x - mfield.x[xhighindex])/dx*(mfield.z[zhighindex]-xinterp.z)/dz;
 
   if((zhighindex == 0)||(zlowindex == (NZ-1))){
     whh = 0;
-    wlh = (field.z[xlowindex]-xinterp.z)/dz;
-    wll = (-field.z[xhighindex]+xinterp.z)/dz;
+    wlh = (mfield.z[xlowindex]-xinterp.z)/dz;
+    wll = (-mfield.z[xhighindex]+xinterp.z)/dz;
     whl = 0;
   }
 
@@ -50,16 +33,17 @@ void interpfield(field outfield, fieldgrid field, pos xinterp, int NX, int NZ){
     else{
       whh = 0;
       wlh = 0;
-      wll = (field.x[xhighindex]-xinterp.x)/dx;
-      whl = (xinterp.x-field.x[xlowindex])/dx;
+      wll = (mfield.x[xhighindex]-xinterp.x)/dx;
+      whl = (xinterp.x-mfield.x[xlowindex])/dx;
     }
   }
 
 
-  outfield.Ex = wll*field.Ex[xlowindex][zlowindex] +wlh*field.Ex[xlowindex][zhighindex] + whl*field.Ex[xhighindex][zlowindex] + whh*field.Ex[xhighindex][zhighindex];
-  outfield.Ey = wll*field.Ey[xlowindex][zlowindex] +wlh*field.Ey[xlowindex][zhighindex] + whl*field.Ey[xhighindex][zlowindex] + whh*field.Ey[xhighindex][zhighindex];
-  outfield.Ez = wll*field.Ez[xlowindex][zlowindex] +wlh*field.Ez[xlowindex][zhighindex] + whl*field.Ez[xhighindex][zlowindex] + whh*field.Ez[xhighindex][zhighindex];
-  outfield.Bx = wll*field.Bx[xlowindex][zlowindex] +wlh*field.Bx[xlowindex][zhighindex] + whl*field.Bx[xhighindex][zlowindex] + whh*field.Bx[xhighindex][zhighindex];
-  outfield.By = wll*field.By[xlowindex][zlowindex] +wlh*field.By[xlowindex][zhighindex] + whl*field.By[xhighindex][zlowindex] + whh*field.By[xhighindex][zhighindex];
-  outfield.Bz = wll*field.Bz[xlowindex][zlowindex] +wlh*field.Bz[xlowindex][zhighindex] + whl*field.Bz[xhighindex][zlowindex] + whh*field.Bz[xhighindex][zhighindex];
+  outfield.Ex = wll*mfield.Ex[xlowindex][zlowindex] +wlh*mfield.Ex[xlowindex][zhighindex] + whl*mfield.Ex[xhighindex][zlowindex] + whh*mfield.Ex[xhighindex][zhighindex];
+  outfield.Ey = wll*mfield.Ey[xlowindex][zlowindex] +wlh*mfield.Ey[xlowindex][zhighindex] + whl*mfield.Ey[xhighindex][zlowindex] + whh*mfield.Ey[xhighindex][zhighindex];
+  outfield.Ez = wll*mfield.Ez[xlowindex][zlowindex] +wlh*mfield.Ez[xlowindex][zhighindex] + whl*mfield.Ez[xhighindex][zlowindex] + whh*mfield.Ez[xhighindex][zhighindex];
+  outfield.Bx = wll*mfield.Bx[xlowindex][zlowindex] +wlh*mfield.Bx[xlowindex][zhighindex] + whl*mfield.Bx[xhighindex][zlowindex] + whh*mfield.Bx[xhighindex][zhighindex];
+  outfield.By = wll*mfield.By[xlowindex][zlowindex] +wlh*mfield.By[xlowindex][zhighindex] + whl*mfield.By[xhighindex][zlowindex] + whh*mfield.By[xhighindex][zhighindex];
+  outfield.Bz = wll*mfield.Bz[xlowindex][zlowindex] +wlh*mfield.Bz[xlowindex][zhighindex] + whl*mfield.Bz[xhighindex][zlowindex] + whh*mfield.Bz[xhighindex][zhighindex];
+  return outfield;
 }

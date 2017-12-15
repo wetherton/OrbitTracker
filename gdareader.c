@@ -11,16 +11,12 @@ char* concat(const char *s1, const char *s2){
   return result;
 }
 
-void loadgda(double ** outdata2, const char q[], int slice, int nx, int nz, const char datadir[]){
+double ** loadgda(const char q[], int slice, int nx, int nz, const char datadir[]){
   char * im1 = concat(datadir,"/");
   char * im2 = concat(im1, q);
   char * fname = concat(im2,".gda");
-  float **outdata;
-  outdata = (float **)malloc(sizeof(float *)*nz);
-  outdata[0] = (float *)malloc(sizeof(float)*nx*nz);
-  for(int i = 0; i< nz; i++){
-    outdata[i] = (*outdata + nx*i);
-  }
+  double **outdata;
+  outdata = setup2Darray(nx,nz);
   float *buffer = (float *) malloc(sizeof(float)*nx*nz);
   FILE *fp = fopen(fname, "rb");
   for(int nslice = 0; nslice<slice; nslice++){
@@ -30,18 +26,14 @@ void loadgda(double ** outdata2, const char q[], int slice, int nx, int nz, cons
   fclose(fp);
   for(int i = 0; i<nz; i++){
     for(int j = 0; j<nx; j++){
-      outdata[i][j] = buffer[j+nx*i];
+      outdata[i][j] = (double) buffer[j+nx*i];
     }
   }
   free(buffer);
   // Decimation process begins here
 
-  float ** outdata1;
-  outdata1 = (float **)malloc(sizeof(float *)*nz);
-  outdata1[0] = (float *)malloc(sizeof(float)*nx*nz/2);
-  for(int i = 0; i< nz; i++){
-    outdata1[i] = (*outdata1 + nx*i/2);
-  }
+  double ** outdata1;
+  outdata1 = setup2Darray(nx/2,nz);
 
   for(int i = 0; i < nz; i++){
     for(int j = 0; j< nx/2; j++){
@@ -50,36 +42,36 @@ void loadgda(double ** outdata2, const char q[], int slice, int nx, int nz, cons
   }
 
   free(outdata);
+
+  double **outdata2 = setup2Darray(nx/2,nz/2);
   
-  outdata2 = (double **)malloc(sizeof(double *)*nz/2);
-  outdata2[0] = (double *)malloc(sizeof(double)*nx*nz/4);
-  for(int i = 0; i< nz/2; i++){
-    outdata2[i] = (*outdata2 + nx*i/2);
-  }
 
   for(int i = 0; i < nz/2; i++){
     for(int j = 0; j< nx/2; j++){
-      outdata2[i][j] = (double)(outdata1[2*i][j] + outdata1[2*i+1][j])/2;
+      outdata2[i][j] = (outdata1[2*i][j] + outdata1[2*i+1][j])/2;
     }
   }
 
   free(outdata1);
+  return outdata2;
 }
 
-void loadfields(fieldgrid masterfield,int NX,int NZ, double LX, double LZ, int slice, const char datadir[]){
-  loadgda(masterfield.Ex, "ex",slice, NX, NZ, datadir);
-  loadgda(masterfield.Ey, "ey",slice, NX, NZ, datadir);
-  loadgda(masterfield.Ez, "ez",slice, NX, NZ, datadir);
-  loadgda(masterfield.Bx, "bx",slice, NX, NZ, datadir);
-  loadgda(masterfield.By, "by",slice, NX, NZ, datadir);
-  loadgda(masterfield.Bz, "bz",slice, NX, NZ, datadir);
-  loadx(masterfield.x,LX,NX);
-  loadz(masterfield.z,LZ,NZ);
+fieldgrid loadfields(int NX,int NZ, double LX, double LZ, int slice, const char datadir[]){
+  fieldgrid masterfield = masterfieldmalloc(NX,NZ);
+  masterfield.Ex = loadgda("ex",slice, NX, NZ, datadir);
+  masterfield.Ey = loadgda("ey",slice, NX, NZ, datadir);
+  masterfield.Ez = loadgda("ez",slice, NX, NZ, datadir);
+  masterfield.Bx = loadgda("bx",slice, NX, NZ, datadir);
+  masterfield.By = loadgda("by",slice, NX, NZ, datadir);
+  masterfield.Bz = loadgda("bz",slice, NX, NZ, datadir);
+  masterfield.x =loadx(LX,NX/2);
+  masterfield.z =loadz(LZ,NZ/2);
+  return masterfield;
 }
 
-void masterfieldmalloc(fieldgrid masterfield,int nx,int nz){
+fieldgrid masterfieldmalloc(int nx,int nz){
   fieldgrid * temp = (fieldgrid *)malloc(sizeof(double **)*6+sizeof(double*)*2);
-  masterfield = *temp;
+  fieldgrid masterfield = *temp;
   masterfield.Ex = (double **)malloc(sizeof(double*)*nz/2);
   masterfield.Ex[0] = (double *)malloc(sizeof(double)*nx*nz/4);
   masterfield.Ey = (double **)malloc(sizeof(double*)*nz/2);
@@ -94,18 +86,32 @@ void masterfieldmalloc(fieldgrid masterfield,int nx,int nz){
   masterfield.Bz[0] = (double *)malloc(sizeof(double)*nx*nz/4);
   masterfield.x = (double *)malloc(sizeof(double)*nx/2);
   masterfield.z = (double *)malloc(sizeof(double)*nz/2);
+  return masterfield;
 }
 
-void loadx(double *x,double Lx, int nx){
+double ** setup2Darray(int nx, int nz){
+  double ** array = (double **) malloc(sizeof(double*)*nz);
+  array[0] = (double *)malloc(sizeof(double)*nx*nz);
+  for(int i = 0; i< nz; i++){
+    array[i] = (*array + nx*i);
+  }
+  return array;
+}
+
+double *loadx(double Lx, int nx){
+  double *x = (double *) malloc(sizeof(double)*nx);
   double dx = Lx/(nx-1);
   for(int i = 0; i< nx; i++){
     x[i] = i*dx;
   }
+  return x;
 }
 
-void loadz(double *z, double Lz, int nz){
+double *loadz(double Lz, int nz){
+  double *z = (double *) malloc(nz*sizeof(double));
   double dz = Lz/(nz-1);
   for(int i = 0; i< nz; i++){
     z[i] = -Lz/2+i*dz;
   }
+  return z;
 }

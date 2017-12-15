@@ -13,7 +13,6 @@
 #define DIM 6
 #define TILEX 20
 #define TILEZ 20
-#define OMPNUM 8
 #define MAGIC 4
 
 const char jobname[128], outdir[256],gdadir[256];
@@ -32,8 +31,7 @@ int main(int argc,char *argv[]){
   initialize();
   omp_set_num_threads(nthreads);
   fieldgrid masterfield;
-  masterfieldmalloc(masterfield,nx,nz);
-  loadfields(masterfield,nx,nz,Lx,Lz,slice,gdadir);
+  masterfield = loadfields(nx,nz,Lx,Lz,slice,gdadir);
   double *vx, *vy, *vz;
   int nICs = Nvx*Nvy*Nvz;
   int size = nICs*sizeof(double);
@@ -59,9 +57,9 @@ int main(int argc,char *argv[]){
     }
   }
   for(int npos = 0; npos<Npoints; npos++){
-    for (int i = rank; i<nICs; i+=numprocs*OMPNUM*MAGIC){
+    for (int i = rank; i<nICs; i+=numprocs*nthreads*MAGIC){
 #pragma omp_parallel_for()
-      for(int j =0; j<OMPNUM*MAGIC; j++){
+      for(int j =0; j<nthreads*MAGIC; j++){
 	int index = j + i;
 	if (index>nICs) break;
 	posvel IC;
@@ -84,8 +82,7 @@ int dxdt(double t, const double y[], double dydt[], void *params){
   fieldgrid masterfield = *(fieldgrid *) params;
   pos xyz;
   xyz.x = y[0]; xyz.z = y[2];
-  field fields;
-  interpfield(fields,masterfield,xyz,nx,nz);
+  field fields = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
   (void) (t);
   double gamma = sqrt(1+y[3]*y[3]+y[4]*y[4]+y[5]*y[5]);
   double vx = y[3]/gamma;
@@ -104,8 +101,7 @@ int dxdtB(double t, const double y[], double dydt[], void *params){
   fieldgrid masterfield = *(fieldgrid *) params;
   pos xyz;
   xyz.x = y[0]; xyz.z = y[2];
-  field fields;
-  interpfield(fields,masterfield,xyz,nx,nz);
+  field fields = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
   double gamma = sqrt(1+y[3]*y[3]+y[4]*y[4]+y[5]*y[5]);
   double vx = y[3]/gamma;
   double vy = y[4]/gamma;
