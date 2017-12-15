@@ -100,7 +100,7 @@ double ** setup2Darray(int nx, int nz){
 
 double *loadx(double Lx, int nx){
   double *x = (double *) malloc(sizeof(double)*nx);
-  double dx = Lx/(nx-1);
+  double dx = Lx/(nx);
   for(int i = 0; i< nx; i++){
     x[i] = i*dx;
   }
@@ -109,9 +109,9 @@ double *loadx(double Lx, int nx){
 
 double *loadz(double Lz, int nz){
   double *z = (double *) malloc(nz*sizeof(double));
-  double dz = Lz/(nz-1);
+  double dz = Lz/(nz);
   for(int i = 0; i< nz; i++){
-    z[i] = -Lz/2+i*dz;
+    z[i] = -(Lz+dz)/2+i*dz;
   }
   return z;
 }

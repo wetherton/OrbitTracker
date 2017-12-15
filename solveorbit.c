@@ -24,11 +24,10 @@ double tend;
 double *x0, *z0;
 
 int main(int argc,char *argv[]){
-  //MPI_Init(&argc, &argv);
+  MPI_Init(&argc, &argv);
   int rank, numprocs;
-  rank = 0; numprocs = 1;
-  //MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
-  //MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
   initialize();
   omp_set_num_threads(nthreads);
   fieldgrid masterfield;
@@ -75,7 +74,7 @@ int main(int argc,char *argv[]){
       }
     }
   }
-  //MPI_Finalize();
+  MPI_Finalize();
   return 0;
 }
 
@@ -136,7 +135,7 @@ int solveorbit(posvel IC, fieldgrid masterfield){
   char buffer[1024];
   char *outstring = (char *) malloc(sizeof(char)*1024*nts);
   *outstring = '\0';
-  sprintf(filestring, "%sFx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.txt\0",jobname,IC.x,IC.z,IC.vx*1000,IC.vy*1000,IC.vz*1000);
+  sprintf(filestring, "%sFx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.tsv\0",jobname,IC.x,IC.z,IC.vx*1000,IC.vy*1000,IC.vz*1000);
   char *out1 = concat(outdir,"/");
   char *out = concat(out1,filestring);
   FILE *fp = fopen(out,"w");
@@ -171,9 +170,9 @@ int solveorbitB(posvel IC, fieldgrid masterfield){
   char buffer[1024];
   char *outstring = (char *) malloc(sizeof(char)*1024*nts);
   *outstring = '\0';
-  sprintf(filestring, "%sBx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.txt\0",jobname,IC.x,IC.z,1000*IC.vx,1000*IC.vy,1000*IC.vz);
+  sprintf(filestring, "%sBx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.tsv\0",jobname,IC.x,IC.z,1000*IC.vx,1000*IC.vy,1000*IC.vz);
   char *out1 = concat(outdir,"/");
-  char *out = concat(out1,filestring);
+  char *out = concat(out1,filestring
   FILE *fp = fopen(out,"w");
   gsl_odeiv2_system sys = {dxdtB, jacobian, DIM, (void *)&masterfield};
   gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd,1e-6, 1e-6, 0.0);
