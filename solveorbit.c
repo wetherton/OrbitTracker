@@ -172,7 +172,7 @@ int solveorbitB(posvel IC, fieldgrid masterfield){
   *outstring = '\0';
   sprintf(filestring, "%sBx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.tsv\0",jobname,IC.x,IC.z,1000*IC.vx,1000*IC.vy,1000*IC.vz);
   char *out1 = concat(outdir,"/");
-  char *out = concat(out1,filestring
+  char *out = concat(out1,filestring);
   FILE *fp = fopen(out,"w");
   gsl_odeiv2_system sys = {dxdtB, jacobian, DIM, (void *)&masterfield};
   gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd,1e-6, 1e-6, 0.0);
