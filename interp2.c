@@ -3,7 +3,7 @@
 
 field interpfield(fieldgrid mfield, pos xinterp, int NX, int NZ, double Lx, double Lz){
   field outfield;
-  int xhighindex, xlowindex, zhighindex,zlowindex;
+  int xhighindex, xlowindex = 0, zhighindex,zlowindex = 0;
   double dx = Lx/NX;
   double dz = Lz/NZ;
   if(xinterp.x>0) xlowindex = (int) xinterp.x/dx;

@@ -20,13 +20,13 @@ EXEC := orbitsolve
 all : Makefile $(EXEC)
 
 debug:
-	gcc -g -std=c99 -o orbitsolve solveorbit_noMPI.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas
+	gcc -Wall -g -std=c99 -o orbitsolve solveorbit_noMPI.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas
 
 orbitsolve: 
-	mpicc -std=c99 -o orbitsolve -O3 solveorbit.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas
+	mpicc -Wall -std=c99 -o orbitsolve -O3 solveorbit.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas
 
 noMPI:
-	gcc -O3 -std=c99 -o orbitsolve solveorbit_noMPI.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas
+	gcc -Wall -O3 -std=c99 -o orbitsolve solveorbit_noMPI.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas
 
 .PHONY: clean
 clean:

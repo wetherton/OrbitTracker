@@ -20,7 +20,7 @@
 const char jobname[128], outdir[256],gdadir[256];
 int Nvx, Nvy, Nvz;
 double vxmax, vymax, vzmax, Lx, Lz, minx, minz, maxx, maxz;
-int Npoints, nts, nx, nz, slice, nthreads;
+int Npoints, nts, nx, nz, slice, nthreads, DoTrack;
 double tend;
 double *x0, *z0;
 
@@ -60,25 +60,26 @@ int main(int argc,char *argv[]){
   }
   for(int npos = 0; npos<Npoints; npos++){
     for (int i = rank; i<nICs; i+=numprocs*nthreads*MAGIC){
-#pragma omp_parallel_for()
+#pragma omp parallel for 
       for(int j =0; j<nthreads*MAGIC; j++){
 	int index = j + i;
-	if (index>nICs) break;
-	posvel IC;
-	IC.x = x0[npos];
-	IC.y = 0.0;
-	IC.z = z0[npos];
-	IC.vx = vx[index];
-	IC.vy = vy[index];
-	IC.vz = vz[index];
-	solveorbit(IC,masterfield);
-	solveorbitB(IC,masterfield);
+	if(index<nICs){
+	  posvel IC;
+	  IC.x = x0[npos];
+	  IC.y = 0.0;
+	  IC.z = z0[npos];
+	  IC.vx = vx[index];
+	  IC.vy = vy[index];
+	  IC.vz = vz[index];
+	  solveorbit(IC,masterfield);
+	  solveorbitB(IC,masterfield);
+	}
       }
     }
   }
   diff = clock() - start;
-  int msec = diff * 1000/CLOCKS_PER_SEC;
-  printf("Time: %d ms", msec);
+  int sec = diff/CLOCKS_PER_SEC;
+  printf("Time: %d ms", sec);
   //MPI_Finalize();
   return 0;
 }
@@ -158,13 +159,17 @@ int solveorbit(posvel IC, fieldgrid masterfield){
     }
 
     sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n\0",y[0],y[1],y[2],y[3],y[4],y[5],ti);
-    strcat(outstring,buffer);
+    if(DoTrack)
+      strcat(outstring,buffer);
     if(outcheck(y[0],y[2])){
       break;
     }
   }
   gsl_odeiv2_driver_free(d);
-  fprintf(fp,"%s",outstring);
+  if(DoTrack)
+    fprintf(fp,"%s",outstring);
+  else
+    fprintf(fp, "%s", buffer);
   fclose(fp);
   free(outstring);
   return 0;
@@ -191,15 +196,17 @@ int solveorbitB(posvel IC, fieldgrid masterfield){
       fprintf(fp,"Error, return value = %d\n",status);
       break;
     }
-
     sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n\0",y[0],y[1],y[2],-y[3],-y[4],-y[5],-ti);
-    strcat(outstring,buffer);
-    if(outcheck(y[0],y[2])){
+    if(DoTrack)
+      strcat(outstring,buffer);
+    if(outcheck(y[0],y[2]))
       break;
-    }
   }
   gsl_odeiv2_driver_free(d);
-  fprintf(fp,"%s",outstring);
+  if(DoTrack)
+    fprintf(fp,"%s",outstring);
+  else
+    fprintf(fp,"%s",buffer);
   fclose(fp);
   free(outstring);
   return 0;
@@ -246,6 +253,7 @@ int initialize(){
   fscanf(fp, "nz %d\n",&nz);
   fscanf(fp, "slice %d\n",&slice);
   fscanf(fp,"omp:nthreads %d\n",&nthreads);
+  fscanf(fp, "fulltrack %d\n",&DoTrack);
   fclose(fp);
   return 0;
 }
