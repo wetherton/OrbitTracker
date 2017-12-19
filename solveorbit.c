@@ -20,7 +20,7 @@
 const char jobname[128], outdir[256],gdadir[256];
 int Nvx, Nvy, Nvz;
 double vxmax, vymax, vzmax, Lx, Lz, minx, minz, maxx, maxz;
-int Npoints, nts, nx, nz, slice, nthreads, DoTrack;
+int Npoints, nts, nx, nz, slice, nthreads, DoTrack, fileext;
 double tend;
 double *x0, *z0;
 
@@ -33,7 +33,10 @@ int main(int argc,char *argv[]){
   initialize();
   omp_set_num_threads(nthreads);
   fieldgrid masterfield;
-  masterfield = loadfields(nx,nz,Lx,Lz,slice,gdadir);
+  if(slice==0)
+    masterfield = loadfieldsPeter(nx,nz,Lx,Lz,fileext,gdadir);
+  else
+    masterfield = loadfields(nx,nz,Lx,Lz,slice,gdadir);
   double *vx, *vy, *vz;
   int nICs = Nvx*Nvy*Nvz;
   int size = nICs*sizeof(double);
@@ -255,6 +258,8 @@ int initialize(){
   fscanf(fp, "nx %d\n",&nx);
   fscanf(fp, "nz %d\n",&nz);
   fscanf(fp, "slice %d\n",&slice);
+  if(slice==0)
+    fscanf(fp, "timestep %d\n", &fileext);
   fscanf(fp,"omp:nthreads %d\n",&nthreads);
   fscanf(fp, "fulltrack %d\n", &DoTrack);
   fclose(fp);

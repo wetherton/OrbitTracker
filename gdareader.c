@@ -115,3 +115,64 @@ double *loadz(double Lz, int nz){
   }
   return z;
 }
+
+fieldgrid loadfieldsPeter(int NX,int NZ, double LX, double LZ, int slice, const char datadir[]){
+  fieldgrid masterfield = masterfieldmalloc(NX,NZ);
+  masterfield.Ex = loadgdaPeter("ex-ave",slice, NX, NZ, datadir);
+  masterfield.Ey = loadgdaPeter("ey-ave",slice, NX, NZ, datadir);
+  masterfield.Ez = loadgdaPeter("ez-ave",slice, NX, NZ, datadir);
+  masterfield.Bx = loadgdaPeter("bx",slice, NX, NZ, datadir);
+  masterfield.By = loadgdaPeter("by",slice, NX, NZ, datadir);
+  masterfield.Bz = loadgdaPeter("bz",slice, NX, NZ, datadir);
+  masterfield.x =loadx(LX,NX/2);
+  masterfield.z =loadz(LZ,NZ/2);
+  return masterfield;
+}
+
+double ** loadgdaPeter(const char q[], int slice, int nx, int nz, const char datadir[]){
+  char * im1 = concat(datadir,"/");
+  char * im2 = concat(im1, q);
+  char * sbuffer;
+  sprintf(sbuffer, "_%d", slice);
+  char * im3 = concat(im2, sbuffer);
+  char * fname = concat(im3,".gda");
+  double **outdata;
+  outdata = setup2Darray(nx,nz);
+  float *buffer = (float *) malloc(sizeof(float)*nx*nz);
+  FILE *fp = fopen(fname, "rb");
+  for(int nslice = 0; nslice<slice; nslice++){
+    fread(buffer, sizeof(float), nx*nz, fp);
+  }
+
+  fclose(fp);
+  for(int i = 0; i<nz; i++){
+    for(int j = 0; j<nx; j++){
+      outdata[i][j] = (double) buffer[j+nx*i];
+    }
+  }
+  free(buffer);
+  // Decimation process begins here
+
+  double ** outdata1;
+  outdata1 = setup2Darray(nx/2,nz);
+
+  for(int i = 0; i < nz; i++){
+    for(int j = 0; j< nx/2; j++){
+      outdata1[i][j] = (outdata[i][2*j] + outdata[i][2*j+1])/2;
+    }
+  }
+
+  free(outdata);
+
+  double **outdata2 = setup2Darray(nx/2,nz/2);
+
+
+  for(int i = 0; i < nz/2; i++){
+    for(int j = 0; j< nx/2; j++){
+      outdata2[i][j] = (outdata1[2*i][j] + outdata1[2*i+1][j])/2;
+    }
+  }
+
+  free(outdata1);
+  return outdata2;
+}

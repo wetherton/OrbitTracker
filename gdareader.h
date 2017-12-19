@@ -8,4 +8,6 @@ fieldgrid masterfieldmalloc( int, int);
 double * loadx(double, int);
 double * loadz(double, int);
 double ** setup2Darray( int, int);
+double ** loadgdaPeter(const char q[], int slice, int nx, int nz,const char datadir[]);
+fieldgrid loadfieldsPeter(int NX,int NZ, double LX, double LZ, int slice, const char datadir[]);
 #endif
