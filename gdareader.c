@@ -132,7 +132,8 @@ fieldgrid loadfieldsPeter(int NX,int NZ, double LX, double LZ, int slice, const 
 double ** loadgdaPeter(const char q[], int slice, int nx, int nz, const char datadir[]){
   char * im1 = concat(datadir,"/");
   char * im2 = concat(im1, q);
-  char * sbuffer;
+  char sbuffer[16];
+  *sbuffer = '\0';
   sprintf(sbuffer, "_%d", slice);
   char * im3 = concat(im2, sbuffer);
   char * fname = concat(im3,".gda");
