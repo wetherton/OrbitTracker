@@ -62,7 +62,7 @@ int main(int argc,char *argv[]){
     }
   }
   for(int npos = 0; npos<Npoints; npos++){
-    for (int i = rank; i<nICs; i+=numprocs*nthreads*MAGIC){
+    for (int i = rank*nthreads*MAGIC; i<nICs; i+=numprocs*nthreads*MAGIC){
 #pragma omp parallel for
       for(int j =0; j<(nthreads*MAGIC); j++){
 	int index = i + j;
