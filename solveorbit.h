@@ -22,8 +22,8 @@ typedef struct{
 int dxdt(double t, const double y[],double dydt[],void * params);
 int dxdtB(double t, const double y[],double dydt[],void * params);
 int jacobian(double t, const double y[],double *, double dfdt[], void * params);
-int solveorbit(posvel IC, fieldgrid MF);
-int solveorbitB(posvel IC, fieldgrid MF);
+posvel solveorbit(posvel IC, fieldgrid MF);
+posvel solveorbitB(posvel IC, fieldgrid MF);
 int initialize();
 int outcheck(double, double);
 

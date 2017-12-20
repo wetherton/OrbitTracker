@@ -62,6 +62,14 @@ int main(int argc,char *argv[]){
     }
   }
   for(int npos = 0; npos<Npoints; npos++){
+    char endfilename[512];
+    *endfilename = '\0';
+    strcat(endfilename,outdir);
+    strcat(endfilename,"/");
+    char temp[256];
+    sprintf(temp, "%sx%04.0fz%04.0frank%d.tsv",jobname,x0[npos],z0[npos],rank);
+    strcat(endfilename,temp);
+    FILE *endpointfile = fopen(endfilename,"w");
     for (int i = rank*nthreads*MAGIC; i<nICs; i+=numprocs*nthreads*MAGIC){
 #pragma omp parallel for
       for(int j =0; j<(nthreads*MAGIC); j++){
@@ -74,11 +82,18 @@ int main(int argc,char *argv[]){
 	  IC.vx = vx[index];
 	  IC.vy = vy[index];
 	  IC.vz = vz[index];
-	  solveorbit(IC,masterfield);
-	  solveorbitB(IC,masterfield);
+	  if(DoTrack)
+	    solveorbit(IC,masterfield);
+	  posvel endpoint = solveorbitB(IC,masterfield);
+          #pragma omp critical
+	  {
+	  fprintf(endpointfile,  "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n"\
+		  ,IC.x,IC.z,IC.vx,IC.vy,IC.vz,endpoint.x,endpoint.z,endpoint.vx,endpoint.vy,endpoint.vz);
+	  }
 	}
       }
     }
+    fclose(endpointfile);
   }
   diff = clock() - start;
   int sec = diff/CLOCKS_PER_SEC;
@@ -139,7 +154,7 @@ int jacobian (double t, const double y[], double *dfdy, double dfdt[], void *par
   return GSL_SUCCESS;
 }
 
-int solveorbit(posvel IC, fieldgrid masterfield){
+posvel solveorbit(posvel IC, fieldgrid masterfield){
   char filestring[256];
   char buffer[1024];
   char *outstring = (char *) malloc(sizeof(char)*1024*nts);
@@ -160,7 +175,7 @@ int solveorbit(posvel IC, fieldgrid masterfield){
 
     if (status!= GSL_SUCCESS){
       fprintf(fp,"Error, return value = %d\n",status);
-      break;
+      return IC;
     }
 
     sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],y[3],y[4],y[5],ti);
@@ -170,16 +185,16 @@ int solveorbit(posvel IC, fieldgrid masterfield){
       break;
     }
   }
-  if(DoTrack)
-    strcat(outstring,buffer);
+  posvel FC;
+  FC.x = y[0]; FC.y = y[1]; FC.z = y[2]; FC.vx = y[3]; FC.vy = y[4]; FC.vz = y[5];
   gsl_odeiv2_driver_free(d);
   fprintf(fp,"%s",outstring);
   fclose(fp);
   free(outstring);
-  return 0;
+  return FC;
 }
 
-int solveorbitB(posvel IC, fieldgrid masterfield){
+posvel solveorbitB(posvel IC, fieldgrid masterfield){
   char filestring[256];
   char buffer[1024];
   char *outstring = (char *) malloc(sizeof(char)*1024*nts);
@@ -192,30 +207,35 @@ int solveorbitB(posvel IC, fieldgrid masterfield){
   gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd,1e-6, 1e-6, 0.0);
   double t = 0.0;
   double y[6] = {IC.x, IC.y, IC.z, -IC.vx, -IC.vy, -IC.vz};
-  sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-t);
-  strcat(outstring,buffer);
+  if(DoTrack){
+    sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-t);
+    strcat(outstring,buffer);
+  }
   for(int i = 1; i<nts; i++){
     double ti = i*tend/nts;
     int status = gsl_odeiv2_driver_apply(d,&t,ti,y);
 
     if (status!= GSL_SUCCESS){
-      fprintf(fp,"Error, return value = %d\n",status);
-      break;
+      if(DoTrack)
+	fprintf(fp,"Error, return value = %d\n",status);
+      return IC;
     }
-    sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-ti);
-    if(DoTrack)
+    if(DoTrack){
+      sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-ti);
       strcat(outstring,buffer);
+    }
     if(outcheck(y[0],y[2])){
       break;
     }
   }
-  if(DoTrack)
-    strcat(outstring,buffer);
+  posvel FC;
+  FC.x = y[0]; FC.y = y[1]; FC.z = y[2]; FC.vx = -y[3]; FC.vy = -y[4]; FC.vz = -y[5]; 
   gsl_odeiv2_driver_free(d);
-  fprintf(fp,"%s",outstring);
+  if(DoTrack)
+    fprintf(fp,"%s",outstring);
   fclose(fp);
   free(outstring);
-  return 0;
+  return FC;
 }
 
 
