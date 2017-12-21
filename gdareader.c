@@ -1,5 +1,5 @@
 #include <stdio.h>
-77;20801;0c#include <stdlib.h>
+#include <stdlib.h>
 #include <string.h>
 #include "solveorbit.h"
 #include "gdareader.h"
