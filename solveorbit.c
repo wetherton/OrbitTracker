@@ -15,7 +15,6 @@
 #define DIM 6
 #define TILEX 20
 #define TILEZ 20
-#define MAGIC 4
 
 const char jobname[128], outdir[256],gdadir[256];
 int Nvx, Nvy, Nvz;
@@ -70,29 +69,24 @@ int main(int argc,char *argv[]){
     sprintf(temp, "%sx%04.0fz%04.0frank%d.tsv",jobname,x0[npos],z0[npos],rank);
     strcat(endfilename,temp);
     FILE *endpointfile = fopen(endfilename,"w");
-    for (int i = rank*nthreads*MAGIC; i<nICs; i+=numprocs*nthreads*MAGIC){
-#pragma omp parallel for
-      for(int j =0; j<(nthreads*MAGIC); j++){
-	int index = i + j;
-	if(index<nICs){
-	  posvel IC;
-	  IC.x = x0[npos];
-	  IC.y = 0.0;
-	  IC.z = z0[npos];
-	  IC.vx = vx[index];
-	  IC.vy = vy[index];
-	  IC.vz = vz[index];
-	  if(DoTrack)
-	    solveorbit(IC,masterfield);
-	  posvel endpoint = solveorbitB(IC,masterfield);
-          #pragma omp critical
-	  {
+#pragma omp parallel for schedule(dynamic)
+      for(int j = rank; j<(nICs); j+=numprocs){
+	posvel IC;
+	IC.x = x0[npos];
+	IC.y = 0.0;
+	IC.z = z0[npos];
+	IC.vx = vx[j];
+	IC.vy = vy[j];
+	IC.vz = vz[j];
+	if(DoTrack)
+	  solveorbit(IC,masterfield);
+	posvel endpoint = solveorbitB(IC,masterfield);
+        #pragma omp critical
+	{
 	  fprintf(endpointfile,  "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n"\
 		  ,IC.x,IC.z,IC.vx,IC.vy,IC.vz,endpoint.x,endpoint.z,endpoint.vx,endpoint.vy,endpoint.vz);
-	  }
 	}
       }
-    }
     fclose(endpointfile);
   }
   diff = clock() - start;
@@ -204,7 +198,7 @@ posvel solveorbitB(posvel IC, fieldgrid masterfield){
   char *out = concat(out1,filestring);
   FILE *fp = fopen(out,"w");
   gsl_odeiv2_system sys = {dxdtB, jacobian, DIM, (void *)&masterfield};
-  gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd,1e-6, 1e-6, 0.0);
+  gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk2,1e-6, 1e-6, 0.0);
   double t = 0.0;
   double y[6] = {IC.x, IC.y, IC.z, -IC.vx, -IC.vy, -IC.vz};
   if(DoTrack){

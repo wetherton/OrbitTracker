@@ -4,6 +4,9 @@
 #include "solveorbit.h"
 #include "gdareader.h"
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
 char* concat(const char *s1, const char *s2){
   char *result = malloc(strlen(s1)+strlen(s2)+1);
   strcpy(result, s1);
@@ -61,6 +64,13 @@ fieldgrid loadfields(int NX,int NZ, double LX, double LZ, int slice, const char 
   masterfield.Ex = loadgda("ex",slice, NX, NZ, datadir);
   masterfield.Ey = loadgda("ey",slice, NX, NZ, datadir);
   masterfield.Ez = loadgda("ez",slice, NX, NZ, datadir);
+
+  int npoints = 11;
+  masterfield.Ex = smoothfield(masterfield.Ex,NX/2,NZ/2, npoints);
+  masterfield.Ey = smoothfield(masterfield.Ex,NX/2,NZ/2, npoints);
+  masterfield.Ez = smoothfield(masterfield.Ex,NX/2,NZ/2, npoints);
+  
+    
   masterfield.Bx = loadgda("bx",slice, NX, NZ, datadir);
   masterfield.By = loadgda("by",slice, NX, NZ, datadir);
   masterfield.Bz = loadgda("bz",slice, NX, NZ, datadir);
@@ -176,4 +186,24 @@ double ** loadgdaPeter(const char q[], int slice, int nx, int nz, const char dat
 
   free(outdata1);
   return outdata2;
+}
+
+double ** smoothfield(double ** E,int nx, int nz, int npoints){
+  double ** outfield = setup2Darray(nx,nz);
+  for(int i = npoints/2; i<(nz-1-npoints/2); i++){
+    for(int j = 0; j<nx; j++){
+      outfield[i][j] = 0;
+	for(int k = -npoints/2; k< npoints/2; k++){
+	  for(int l = -npoints/2; l<npoints/2; l++){
+	    int zind = i + k;
+	    zind = MIN(zind, nz-1);
+	    zind = MAX(zind,0);
+	    int xind = (j+k)%nx;
+	    outfield[i][j]+=E[zind][xind]/(npoints*npoints);
+	  }
+	}
+    }
+  }
+  
+  return outfield;
 }
