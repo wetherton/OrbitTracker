@@ -3,21 +3,21 @@
 
 typedef struct{
   double Ex, Ey, Ez, Bx, By, Bz;
-} field;
+} field; //6 doubles to categorize E&M fields at a point
 
 typedef struct{
   double **Ex, **Ey, **Ez, **Bx, **By, **Bz;
   double *x, *z;
-} fieldgrid;
+} fieldgrid; //2D arrays for E&M fields, 1D arrays to specify the grid
 
 
 typedef struct{
   double x, y, z, vx, vy, vz;
-}posvel;
+}posvel; //Simple structure to hold phase space coordinate
 
 typedef struct{
   double x, z;
-}pos;
+}pos; //Interpolation position
 
 int dxdt(double t, const double y[],double dydt[],void * params);
 int dxdtB(double t, const double y[],double dydt[],void * params);
