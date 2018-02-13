@@ -72,8 +72,8 @@ fieldgrid loadfields(int NX,int NZ, double LX, double LZ, int slice, const char 
 
   int npoints = 11; //Smoothing of electric field
   masterfield.Ex = smoothfield(masterfield.Ex,NX/2,NZ/2, npoints);
-  masterfield.Ey = smoothfield(masterfield.Ex,NX/2,NZ/2, npoints);
-  masterfield.Ez = smoothfield(masterfield.Ex,NX/2,NZ/2, npoints);
+  masterfield.Ey = smoothfield(masterfield.Ey,NX/2,NZ/2, npoints);
+  masterfield.Ez = smoothfield(masterfield.Ez,NX/2,NZ/2, npoints);
   
     
   masterfield.Bx = loadgda("bx",slice, NX, NZ, datadir);
@@ -145,8 +145,8 @@ fieldgrid loadfieldsPeter(int NX,int NZ, double LX, double LZ, int slice, const 
 
   int npoints = 11; //Smoothing of electric field
   masterfield.Ex = smoothfield(masterfield.Ex,NX/2,NZ/2, npoints);
-  masterfield.Ey = smoothfield(masterfield.Ex,NX/2,NZ/2, npoints);
-  masterfield.Ez = smoothfield(masterfield.Ex,NX/2,NZ/2, npoints);
+  masterfield.Ey = smoothfield(masterfield.Ey,NX/2,NZ/2, npoints);
+  masterfield.Ez = smoothfield(masterfield.Ez,NX/2,NZ/2, npoints);
 
   
   masterfield.Bx = loadgdaPeter("bx",slice, NX, NZ, datadir);
@@ -210,7 +210,7 @@ double ** loadgdaPeter(const char q[], int slice, int nx, int nz, const char dat
 double ** smoothfield(double ** E,int nx, int nz, int npoints){
   //box filter of size npoints
   double ** outfield = setup2Darray(nx,nz);
-  for(int i = npoints/2; i<(nz-1-npoints/2); i++){
+  for(int i = 0; i<nz; i++){
     for(int j = 0; j<nx; j++){
       outfield[i][j] = 0;
 	for(int k = -npoints/2; k< npoints/2; k++){

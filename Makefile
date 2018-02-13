@@ -26,7 +26,7 @@ orbitsolve:
 	mpicc -Wall -std=c99 -o orbitsolve -O3 solveorbit.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas -lm
 
 noMPI:
-	gcc -Wall -O3 -std=c99 -o orbitsolve solveorbit_noMPI.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas -lm
+	gcc -Wall -std=c99 -o orbitsolve -O3 solveorbit_noMPI.c gdareader.c interp2.c -fopenmp -lgsl -lgslcblas -lm
 
 .PHONY: clean
 clean:
