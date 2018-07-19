@@ -26,5 +26,7 @@ posvel solveorbit(posvel IC, fieldgrid MF);
 posvel solveorbitB(posvel IC, fieldgrid MF);
 int initialize();
 int outcheck(double, double);
-
+int BorisUpdate(posvel part, field f, double dt);
+int particlepush(posvel part, double dt);
+  
 #endif

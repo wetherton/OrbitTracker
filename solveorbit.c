@@ -24,6 +24,7 @@ double vxmax, vymax, vzmax, Lx, Lz, minx, minz, maxx, maxz;
 int Npoints, nts, nx, nz, slice, nthreads, DoTrack, fileext;
 double tend;
 double *x0, *z0;
+double wpewce;
 
 int main(int argc,char *argv[]){
   clock_t start = clock(), diff;
@@ -155,7 +156,7 @@ int jacobian (double t, const double y[], double *dfdy, double dfdt[], void *par
   return GSL_SUCCESS;
 }
 
-posvel solveorbit(posvel IC, fieldgrid masterfield){
+/*posvel solveorbit(posvel IC, fieldgrid masterfield){
   //Forward track
   char filestring[256];
   char buffer[1024];
@@ -165,7 +166,7 @@ posvel solveorbit(posvel IC, fieldgrid masterfield){
   char *out1 = concat(outdir,"/");
   char *out = concat(out1,filestring);
   FILE *fp = fopen(out,"w");
-  gsl_odeiv2_system sys = {dxdt, jacobian, DIM, (void *)&masterfield};
+  gsl_odeiv2_system sys2 = {dxdt, jacobian, DIM, (void *)&masterfield};
   gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk8pd,1e-6, 1e-6, 0.0); //Runge-Kutta 8 now, could be an issue
   double t = 0.0;
   double y[6] = {IC.x, IC.y, IC.z, IC.vx, IC.vy, IC.vz};
@@ -194,6 +195,67 @@ posvel solveorbit(posvel IC, fieldgrid masterfield){
   fclose(fp);
   free(outstring);
   return FC;
+  }*/
+
+posvel solveorbit(posvel IC, fieldgrid masterfield){
+  char filestring[256];
+  char buffer[1024];
+  char *outstring = (char *) malloc(sizeof(char)*1024*nts);
+  *outstring = '\0';
+  sprintf(filestring, "%sFx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.tsv",jobname,IC.x,IC.z,1000*IC.vx,1000*IC.vy,1000*IC.vz);
+  char *out1 = concat(outdir,"/");
+  char *out = concat(out1,filestring);
+  FILE *fp = fopen(out,"w");
+  //gsl_odeiv2_system sys = {dxdtB, jacobian, DIM, (void *)&masterfield};
+  //gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk2,1e-6, 1e-6, 0.0);
+  double t = 0.0;
+  double dt = wpewce/20;
+  //double y[6] = {IC.x, IC.y, IC.z, -IC.vx, -IC.vy, -IC.vz}; //Time reversal
+  posvel part;
+  part.x = IC.x; part.y = IC.y; part.z = IC.z; part.vx = IC.vx; part.vy = IC.vy; part.vz = IC.vz;
+  if(DoTrack){
+    //sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],y[3],y[4],y[5],t);
+    sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",part.x,part.y,part.z,part.vx,part.vy,part.vz,t);
+    strcat(outstring,buffer);
+  }
+  pos xyz;
+  xyz.x = IC.x; xyz.z = IC.z;
+  field f = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
+;
+  BorisUpdate(part,f,-0.5*dt);
+  for(int i = 1; i<nts; i++){
+    double ti = i*tend/nts;
+    for(double tp = (i-1)*tend/nts; tp<ti; tp+=dt){
+      xyz.x = part.x; xyz.z = part.z;
+      f = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
+      BorisUpdate(part,f,dt);
+      particlepush(part,dt);
+    } 
+    /*int status = gsl_odeiv2_driver_apply(d,&t,ti,y);
+
+    if (status!= GSL_SUCCESS){
+      if(DoTrack)
+	fprintf(fp,"Error, return value = %d\n",status);
+      return IC;
+      }*/
+    if(DoTrack){
+      //sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-ti);
+      sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",part.x,part.y,part.z,part.vx,part.vy,part.vz,ti);
+      strcat(outstring,buffer);
+    }
+    if(outcheck(part.x,part.z)){
+      break;
+    }
+  }
+  posvel FC;
+  FC.x = part.x; FC.y = part.y; FC.z = part.z; FC.vx = part.vx; FC.vy = part.vy; FC.vz = part.vz; 
+  //gsl_odeiv2_driver_free(d);
+  if(DoTrack)
+    //Since this can be run without the full track, needs a conditional
+    fprintf(fp,"%s",outstring);
+  fclose(fp);
+  free(outstring);
+  return FC;
 }
 
 posvel solveorbitB(posvel IC, fieldgrid masterfield){
@@ -206,34 +268,50 @@ posvel solveorbitB(posvel IC, fieldgrid masterfield){
   char *out1 = concat(outdir,"/");
   char *out = concat(out1,filestring);
   FILE *fp = fopen(out,"w");
-  gsl_odeiv2_system sys = {dxdtB, jacobian, DIM, (void *)&masterfield};
-  gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk2,1e-6, 1e-6, 0.0);
+  //gsl_odeiv2_system sys = {dxdtB, jacobian, DIM, (void *)&masterfield};
+  //gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk2,1e-6, 1e-6, 0.0);
   double t = 0.0;
-  double y[6] = {IC.x, IC.y, IC.z, -IC.vx, -IC.vy, -IC.vz}; //Time reversal
+  double dt = wpewce/(20);
+  //double y[6] = {IC.x, IC.y, IC.z, -IC.vx, -IC.vy, -IC.vz}; //Time reversal
+  posvel part;
+  part.x = IC.x; part.y = IC.y; part.z = IC.z; part.vx = IC.vx; part.vy = IC.vy; part.vz = IC.vz;
   if(DoTrack){
-    sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-t);
+    //sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-t);
+    sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",part.x,part.y,part.z,-part.vx,-part.vy,-part.vz,-t);
     strcat(outstring,buffer);
   }
+  pos xyz;
+  xyz.x = IC.x; xyz.z = IC.z;
+  field f = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
+;
+  BorisUpdate(part,f,0.5*dt);
   for(int i = 1; i<nts; i++){
     double ti = i*tend/nts;
-    int status = gsl_odeiv2_driver_apply(d,&t,ti,y);
+    for(double tp = (i-1)*tend/nts; tp<ti; tp+=dt){
+      xyz.x = part.x; xyz.z = part.z;
+      f = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
+      BorisUpdate(part,f,-dt);
+      particlepush(part,-dt);
+    } 
+    /*int status = gsl_odeiv2_driver_apply(d,&t,ti,y);
 
     if (status!= GSL_SUCCESS){
       if(DoTrack)
 	fprintf(fp,"Error, return value = %d\n",status);
       return IC;
-    }
+      }*/
     if(DoTrack){
-      sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-ti);
+      //sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",y[0],y[1],y[2],-y[3],-y[4],-y[5],-ti);
+      sprintf(buffer, "%.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\t %.5f\n",part.x,part.y,part.z,-part.vx,-part.vy,-part.vz,-ti);
       strcat(outstring,buffer);
     }
-    if(outcheck(y[0],y[2])){
+    if(outcheck(part.x,part.z)){
       break;
     }
   }
   posvel FC;
-  FC.x = y[0]; FC.y = y[1]; FC.z = y[2]; FC.vx = -y[3]; FC.vy = -y[4]; FC.vz = -y[5]; //time reversal
-  gsl_odeiv2_driver_free(d);
+  FC.x = part.x; FC.y = part.y; FC.z = part.z; FC.vx = -part.vx; FC.vy = -part.vy; FC.vz = -part.vz; //time reversal
+  //gsl_odeiv2_driver_free(d);
   if(DoTrack)
     //Since this can be run without the full track, needs a conditional
     fprintf(fp,"%s",outstring);
@@ -282,6 +360,7 @@ int initialize(){
   fscanf(fp, "Lz %lf\n",&Lz);
   fscanf(fp, "nx %d\n",&nx);
   fscanf(fp, "nz %d\n",&nz);
+  fscanf(fp, "wpewce %lf\n",&wpewce);
   fscanf(fp, "slice %d\n",&slice);
   if(slice==0)
     fscanf(fp, "timestep %d\n", &fileext);
@@ -294,5 +373,59 @@ int initialize(){
 int outcheck(double x,double z){
   //Return 1 if you've left the bounding box
   if((x>maxx)||(x<minx)||(z>maxz)||(z<minz)) return 1;
+  return 0;
+}
+
+int BorisUpdate(posvel part, field f, double dt) {
+  double v_minus[3];
+  double v_prime[3];
+  double v_plus[3];
+  
+  double t[3];
+  double s[3];
+  double t_mag2;
+  int dim;
+  /*v minus*/
+   v_minus[0] = part.vx - f.Ex*0.5*dt; //relativistic momentum
+   v_minus[1] = part.vy - f.Ey*0.5*dt;
+   v_minus[2] = part.vz - f.Ez*0.5*dt;
+
+
+   double gamma = sqrt(1+v_minus[0]*v_minus[0]+v_minus[1]*v_minus[1]+v_minus[2]*v_minus[2]); //Middle of timestep
+   
+   /*t vector*/
+   t[0] = -f.Bx*0.5*dt/gamma; //Electron Assumed in charge and mass
+   t[1] = -f.By*0.5*dt/gamma; //Relativistic cyclotron frequency
+   t[2] = -f.Bz*0.5*dt/gamma;
+
+  /*magnitude of t, squared*/
+   t_mag2 = t[0]*t[0] + t[1]*t[1] + t[2]*t[2];
+
+  /*s vector*/
+   for (dim=0;dim<3;dim++)
+     s[dim] = 2*t[dim]/(1+t_mag2); //Energy conservation in rotation
+
+
+   v_prime[0] = v_minus[0] + v_minus[1]*t[2] - v_minus[2]*t[1];
+   v_prime[1] = v_minus[1] + v_minus[2]*t[0] - v_minus[0]*t[2];
+   v_prime[2] = v_minus[2] + v_minus[0]*t[1] - v_minus[1]*t[0];
+   
+   v_plus[0] = v_minus[0] + v_prime[1]*s[2] - v_prime[2]*s[1];
+   v_plus[1] = v_minus[1] + v_prime[2]*s[0] - v_prime[0]*s[2];
+   v_plus[2] = v_minus[2] + v_prime[0]*s[1] - v_prime[1]*s[0];
+  
+   part.vx = v_plus[0] - f.Ex*0.5*dt;
+  return 0;
+}
+
+int particlepush(posvel part, double dt){
+  double gamma = sqrt(1+part.vx*part.vx+part.vy*part.vy+part.vz*part.vz);
+  double vx = part.vx/gamma;
+  double vy = part.vy/gamma;
+  double vz = part.vz/gamma;
+
+  part.x += vx*dt;
+  part.y += vy*dt;
+  part.z += vz*dt;
   return 0;
 }
