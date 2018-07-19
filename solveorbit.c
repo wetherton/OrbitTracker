@@ -221,7 +221,6 @@ posvel solveorbit(posvel IC, fieldgrid masterfield){
   pos xyz;
   xyz.x = IC.x; xyz.z = IC.z;
   field f = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
-;
   BorisUpdate(part,f,-0.5*dt);
   for(int i = 1; i<nts; i++){
     double ti = i*tend/nts;
@@ -267,7 +266,9 @@ posvel solveorbitB(posvel IC, fieldgrid masterfield){
   sprintf(filestring, "%sBx%04.0fz%04.0fvx%03.0fvy%03.0fvz%03.0f.tsv",jobname,IC.x,IC.z,1000*IC.vx,1000*IC.vy,1000*IC.vz);
   char *out1 = concat(outdir,"/");
   char *out = concat(out1,filestring);
-  FILE *fp = fopen(out,"w");
+  FILE *fp;
+  if(DoTrack)
+    fp = fopen(out,"w");
   //gsl_odeiv2_system sys = {dxdtB, jacobian, DIM, (void *)&masterfield};
   //gsl_odeiv2_driver * d = gsl_odeiv2_driver_alloc_y_new(&sys, gsl_odeiv2_step_rk2,1e-6, 1e-6, 0.0);
   double t = 0.0;
@@ -312,10 +313,11 @@ posvel solveorbitB(posvel IC, fieldgrid masterfield){
   posvel FC;
   FC.x = part.x; FC.y = part.y; FC.z = part.z; FC.vx = -part.vx; FC.vy = -part.vy; FC.vz = -part.vz; //time reversal
   //gsl_odeiv2_driver_free(d);
-  if(DoTrack)
+  if(DoTrack){
     //Since this can be run without the full track, needs a conditional
     fprintf(fp,"%s",outstring);
-  fclose(fp);
+    fclose(fp);
+  }
   free(outstring);
   return FC;
 }
