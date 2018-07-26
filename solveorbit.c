@@ -221,14 +221,14 @@ posvel solveorbit(posvel IC, fieldgrid masterfield){
   pos xyz;
   xyz.x = IC.x; xyz.z = IC.z;
   field f = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
-  BorisUpdate(part,f,-0.5*dt);
+  part = BorisUpdate(part,f,-0.5*dt);
   for(int i = 1; i<nts; i++){
     double ti = i*tend/nts;
     for(double tp = (i-1)*tend/nts; tp<ti; tp+=dt){
       xyz.x = part.x; xyz.z = part.z;
       f = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
-      BorisUpdate(part,f,dt);
-      particlepush(part,dt);
+      part = BorisUpdate(part,f,dt);
+      part = particlepush(part,dt);
     } 
     /*int status = gsl_odeiv2_driver_apply(d,&t,ti,y);
 
@@ -285,14 +285,14 @@ posvel solveorbitB(posvel IC, fieldgrid masterfield){
   xyz.x = IC.x; xyz.z = IC.z;
   field f = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
 ;
-  BorisUpdate(part,f,0.5*dt);
+  part = BorisUpdate(part,f,0.5*dt);
   for(int i = 1; i<nts; i++){
     double ti = i*tend/nts;
     for(double tp = (i-1)*tend/nts; tp<ti; tp+=dt){
       xyz.x = part.x; xyz.z = part.z;
       f = interpfield(masterfield,xyz,nx/2,nz/2,Lx,Lz);
-      BorisUpdate(part,f,-dt);
-      particlepush(part,-dt);
+      part = BorisUpdate(part,f,-dt);
+      part = particlepush(part,-dt);
     } 
     /*int status = gsl_odeiv2_driver_apply(d,&t,ti,y);
 
@@ -378,49 +378,43 @@ int outcheck(double x,double z){
   return 0;
 }
 
-int BorisUpdate(posvel part, field f, double dt) {
+posvel BorisUpdate(posvel part, field f, double dt) {
+  //stolen mostly from VPIC Boris method (best to match, right?)
   double v_minus[3];
-  double v_prime[3];
   double v_plus[3];
-  
-  double t[3];
-  double s[3];
-  double t_mag2;
-  int dim;
-  /*v minus*/
+  double v0, v1, v2, v3, v4;
+  const double one_third  = 1.0/3.0;
+  const double two_fifteenths = 2.0/15.0;
+  /*v minus, electric field half update*/
    v_minus[0] = part.vx - f.Ex*0.5*dt; //relativistic momentum
    v_minus[1] = part.vy - f.Ey*0.5*dt;
    v_minus[2] = part.vz - f.Ez*0.5*dt;
 
 
-   double gamma = sqrt(1+v_minus[0]*v_minus[0]+v_minus[1]*v_minus[1]+v_minus[2]*v_minus[2]); //Middle of timestep
+   double gamma = sqrt(1.0+(v_minus[0]*v_minus[0]+(v_minus[1]*v_minus[1]+v_minus[2]*v_minus[2]))); //Middle of timestep
+
+   v0   = -dt*gamma/2.0;
+   /**/                                      // Boris - scalars
+   v1   = f.Bx*f.Bx + (f.By*f.By + f.Bz*f.Bz);
+   v2   = (v0*v0)*v1;
+   v3   = v0*(1.0+v2*(one_third+v2*two_fifteenths));
+   v4   = v3/(1.0+v1*(v3*v3));
+   v4  += v4;
+   v0   = v_minus[0] + v3*( v_minus[1]*f.Bz - v_minus[2]*f.By );       // Boris - uprime
+   v1   = v_minus[1] + v3*( v_minus[2]*f.Bx - v_minus[0]*f.Bz );
+   v2   = v_minus[2] + v3*( v_minus[0]*f.By - v_minus[1]*f.Bx );
+   v_plus[0] = v_minus[0] + v4*( v1*f.Bz - v2*f.By );            // Boris - rotation
+   v_plus[1] = v_minus[1] + v4*( v2*f.Bx - v0*f.Bz );
+   v_plus[2] = v_minus[2] + v4*( v0*f.By - v1*f.Bx );
    
-   /*t vector*/
-   t[0] = -f.Bx*0.5*dt/gamma; //Electron Assumed in charge and mass
-   t[1] = -f.By*0.5*dt/gamma; //Relativistic cyclotron frequency
-   t[2] = -f.Bz*0.5*dt/gamma;
-
-  /*magnitude of t, squared*/
-   t_mag2 = t[0]*t[0] + t[1]*t[1] + t[2]*t[2];
-
-  /*s vector*/
-   for (dim=0;dim<3;dim++)
-     s[dim] = 2*t[dim]/(1+t_mag2); //Energy conservation in rotation
-
-
-   v_prime[0] = v_minus[0] + v_minus[1]*t[2] - v_minus[2]*t[1];
-   v_prime[1] = v_minus[1] + v_minus[2]*t[0] - v_minus[0]*t[2];
-   v_prime[2] = v_minus[2] + v_minus[0]*t[1] - v_minus[1]*t[0];
-   
-   v_plus[0] = v_minus[0] + v_prime[1]*s[2] - v_prime[2]*s[1];
-   v_plus[1] = v_minus[1] + v_prime[2]*s[0] - v_prime[0]*s[2];
-   v_plus[2] = v_minus[2] + v_prime[0]*s[1] - v_prime[1]*s[0];
-  
    part.vx = v_plus[0] - f.Ex*0.5*dt;
-  return 0;
+   part.vy = v_plus[1] - f.Ey*0.5*dt;
+   part.vz = v_plus[2] - f.Ez*0.5*dt;
+   
+  return part;
 }
 
-int particlepush(posvel part, double dt){
+posvel particlepush(posvel part, double dt){
   double gamma = sqrt(1+part.vx*part.vx+part.vy*part.vy+part.vz*part.vz);
   double vx = part.vx/gamma;
   double vy = part.vy/gamma;
@@ -429,5 +423,5 @@ int particlepush(posvel part, double dt){
   part.x += vx*dt;
   part.y += vy*dt;
   part.z += vz*dt;
-  return 0;
+  return part;
 }
